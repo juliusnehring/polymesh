@@ -4,8 +4,6 @@
 #include <iostream>
 #include <sstream>
 
-#include <polymesh/assert.hh>
-
 namespace polymesh
 {
 template <class ScalarT>
