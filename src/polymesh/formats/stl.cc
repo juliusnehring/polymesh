@@ -1,6 +1,7 @@
 #include "stl.hh"
 
 #include <cstddef>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -36,30 +37,32 @@ void write_stl_binary(std::ostream& out, vertex_attribute<std::array<ScalarT, 3>
     uint32_t n_triangles = mesh.faces().size();
 
     out.write(header, sizeof(header));
-    out.write((char const*)&n_triangles, sizeof(n_triangles));
+    out.write(reinterpret_cast<char const*>(&n_triangles), sizeof(n_triangles));
 
     for (auto f : mesh.faces())
     {
         auto n = f[normals];
-        out.write((char const*)&n, sizeof(n));
+        auto fn = std::array<float, 3>{float(n[0]), float(n[1]), float(n[2])}; // assure REAL32
+        out.write(reinterpret_cast<char const*>(&fn), sizeof(fn));
 
         auto cnt = 0;
         for (auto v : f.vertices())
         {
             if (cnt >= 3)
             {
-                std::cerr << "STL only supports triangles" << std::endl;
+                std::cerr << "[polymesh] STL only supports triangles" << std::endl;
                 break;
             }
 
             auto p = position[v];
-            out.write((char const*)&p, sizeof(p));
+            std::array<float, 3> fp = {float(p[0]), float(p[1]), float(p[2])}; // assure REAL32
+            out.write(reinterpret_cast<char const*>(&fp), sizeof(fp));
 
             ++cnt;
         }
 
         uint16_t attr_cnt = 0;
-        out.write((char const*)&attr_cnt, sizeof(attr_cnt));
+        out.write(reinterpret_cast<char const*>(&attr_cnt), sizeof(attr_cnt));
     }
 }
 
