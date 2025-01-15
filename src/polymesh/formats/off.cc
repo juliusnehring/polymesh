@@ -21,18 +21,44 @@ void write_off(std::ostream& out, vertex_attribute<std::array<ScalarT, 3>> const
     out << "OFF\n";
     out << mesh.vertices().size() << " " << mesh.faces().size() << " " << mesh.edges().size() << "\n";
 
-    for (auto v : mesh.all_vertices())
+    if (mesh.is_compact())
     {
-        auto pos = v[position];
-        out << pos[0] << " " << pos[1] << " " << pos[2] << "\n";
-    }
+        for (auto v : mesh.vertices())
+        {
+            auto pos = v[position];
+            out << pos[0] << " " << pos[1] << " " << pos[2] << "\n";
+        }
 
-    for (auto f : mesh.faces())
+        for (auto f : mesh.faces())
+        {
+            out << f.vertices().size();
+            for (auto v : f.vertices())
+                out << " " << v.idx.value;
+            out << "\n";
+        }
+    }
+    else
     {
-        out << f.vertices().size();
-        for (auto v : f.vertices())
-            out << " " << v.idx.value;
-        out << "\n";
+        // OFF faces are defined by indexing the vertices in the order they were written
+        // if the mesh is not compact, removed vertices create holes in the indexing
+        // to deal with this, we must remap each vertex to a contiguous indexing
+        auto index = vertex_attribute<int>(mesh);
+        auto next_index = 0;
+        for (auto v : mesh.vertices())
+        {
+            auto pos = v[position];
+            out << pos[0] << " " << pos[1] << " " << pos[2] << "\n";
+            index[v] = next_index;
+            ++next_index;
+        }
+
+        for (auto f : mesh.faces())
+        {
+            out << f.vertices().size();
+            for (auto v : f.vertices())
+                out << " " << index[v];
+            out << "\n";
+        }
     }
 }
 
